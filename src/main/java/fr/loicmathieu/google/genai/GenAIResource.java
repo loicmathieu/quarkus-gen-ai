@@ -1,5 +1,6 @@
 package fr.loicmathieu.google.genai;
 
+import com.google.genai.Chat;
 import com.google.genai.Client;
 import com.google.genai.types.Content;
 import com.google.genai.types.GenerateContentConfig;
@@ -18,22 +19,24 @@ public class GenAIResource {
         You are a chatbot named Loïc.
         Don't pretend you know everything but be helpful with a touch of humour.""";
 
-    private GenerateContentConfig config;
+    private Chat chat;
 
     // 3. Injection of the provided GenAI Client object
     @Inject
     Client client;
 
-    // 4. Init the configuration with the system instruction
+    // 4. Init the configuration with the system instruction and a chat session
     @PostConstruct
     void init() {
         var systemInstruction = Content.fromParts(Part.fromText(SYSTEM_INSTRUCTION));
-        config = GenerateContentConfig.builder().systemInstruction(systemInstruction).build();
+        var config = GenerateContentConfig.builder().systemInstruction(systemInstruction).build();
+
+        chat = client.chats.create("gemini-3.8-flash", config);
     }
 
     // 5. Generate a chat response on each call to /chat
     @GET
     public String chat(@QueryParam("prompt") String prompt) {
-        return client.models.generateContent("gemini-3.8-flash", prompt, config).text() + "\n";
+        return chat.sendMessage(prompt).text() + "\n";
     }
 }
